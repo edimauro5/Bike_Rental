@@ -1,0 +1,495 @@
+--(Le funzioni DATEDIFF e TIMEDIFF sono state adoperate per semplificare la gestione dei vincoli di derivazione)
+
+--FUNZIONI
+
+CREATE OR REPLACE FUNCTION DATEDIFF (units VARCHAR(30), start_t TIMESTAMP, end_t TIMESTAMP) 
+     RETURNS INT AS $$
+   DECLARE
+     diff_interval INTERVAL; 
+     diff INT = 0;
+     years_diff INT = 0;
+   BEGIN
+     IF units IN ('yy', 'yyyy', 'year', 'mm', 'm', 'month') THEN
+       years_diff = DATE_PART('year', end_t) - DATE_PART('year', start_t);
+ 
+       IF units IN ('yy', 'yyyy', 'year') THEN
+         -- SQL Server does not count full years passed (only difference between year parts)
+         RETURN years_diff;
+       ELSE
+         -- If end month is less than start month it will subtracted
+         RETURN years_diff * 12 + (DATE_PART('month', end_t) - DATE_PART('month', start_t)); 
+       END IF;
+     END IF;
+ 
+     -- Minus operator returns interval 'DDD days HH:MI:SS'  
+     diff_interval = end_t - start_t;
+ 
+     diff = diff + DATE_PART('day', diff_interval);
+ 
+     IF units IN ('wk', 'ww', 'week') THEN
+       diff = diff/7;
+       RETURN diff;
+     END IF;
+ 
+     IF units IN ('dd', 'd', 'day') THEN
+       RETURN diff;
+     END IF;
+ 
+     diff = diff * 24 + DATE_PART('hour', diff_interval); 
+ 
+     IF units IN ('hh', 'hour') THEN
+        RETURN diff;
+     END IF;
+ 
+     diff = diff * 60 + DATE_PART('minute', diff_interval);
+ 
+     IF units IN ('mi', 'n', 'minute') THEN
+        RETURN diff;
+     END IF;
+ 
+     diff = diff * 60 + DATE_PART('second', diff_interval);
+ 
+     RETURN diff;
+   END;
+   $$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION TIMEDIFF (units VARCHAR(30), start_t TIME, end_t TIME) 
+     RETURNS INT AS $$
+   DECLARE
+     diff_interval INTERVAL; 
+     diff INT = 0;
+   BEGIN
+     -- Minus operator for TIME returns interval 'HH:MI:SS'  
+     diff_interval = end_t - start_t;
+ 
+     diff = DATE_PART('hour', diff_interval);
+ 
+     IF units IN ('hh', 'hour') THEN
+       RETURN diff;
+     END IF;
+ 
+     diff = diff * 60 + DATE_PART('minute', diff_interval);
+ 
+     IF units IN ('mi', 'n', 'minute') THEN
+        RETURN diff;
+     END IF;
+ 
+     diff = diff * 60 + DATE_PART('second', diff_interval);
+ 
+     RETURN diff;
+   END;
+   $$ LANGUAGE plpgsql;
+
+
+
+
+
+--TRIGGER
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione PuntoVendita e verifica che il cap sia costituito da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcCAPpuntoVenditaOnlyDigits() returns trigger as $$
+        begin
+		if(new.cap !~'[0-9]{5}') then
+		     raise exception 'cap in PuntoVendita deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger CAPpuntoVenditaonlyDigits
+       before insert or update of cap on puntovendita
+	   for each row execute procedure ProcCAPpuntoVenditaOnlyDigits();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Cliente e verifica che il cap sia costituito da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcCAPclienteOnlyDigits() returns trigger as $$
+        begin
+		if(new.cap !~'[0-9]{5}') then
+		     raise exception 'cap in Cliente deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger CAPclienteOnlyDigits
+       before insert or update of cap on cliente
+	   for each row execute procedure ProcCAPclienteOnlyDigits();
+	   
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Addetto e verifica che la sua matricola sia costituita da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.
+	   
+create or replace function ProcMatricolaAddettoOnlyDigits() returns trigger as $$
+        begin
+		if(new.matricola !~'[0-9]{5}') then
+		     raise exception 'matricola in Addetto deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger MatricolaAddettoOnlyDigits
+       before insert or update of matricola on addetto
+	   for each row execute procedure ProcMatricolaAddettoOnlyDigits();
+	   
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione CardPrepagata e verifica che il codice sia costituito da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.	   
+	   
+create or replace function ProcCodicePrepagataOnlyDigits() returns trigger as $$
+        begin
+		if(new.codice !~'[0-9]{5}') then
+		     raise exception 'codice in CardPrepagata deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger CodicePrepagataOnlyDigits
+       before insert or update of codice on cardprepagata
+	   for each row execute procedure ProcCodicePrepagataOnlyDigits();
+	   
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Noleggio e verifica che il codice sia costituito da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.	   
+	   
+create or replace function ProcCodiceNoleggioOnlyDigits() returns trigger as $$
+        begin
+		if(new.codice !~'[0-9]{6}') then
+		     raise exception 'codice in Noleggio deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger CodiceNoleggioOnlyDigits
+       before insert or update of codice on noleggio
+	   for each row execute procedure ProcCodiceNoleggioOnlyDigits();
+	   
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Cliente e verifica che la cartadicredito sia costituita da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.	   
+	   
+create or replace function ProcCartaCreditoOnlyDigits() returns trigger as $$
+        begin
+		if(new.cartadicredito !~'[0-9]{16}') then
+		     raise exception 'cartadicredito in Cliente deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger CartaCreditoOnlyDigits
+       before insert or update of cartadicredito on cliente
+	   for each row execute procedure ProcCartaCreditoOnlyDigits();
+	   
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Telefono e verifica che il numero sia costituito da sole cifre.
+--Nel caso in cui così non fosse lancia un'eccezione.	   
+	   
+create or replace function ProcNumTelefonoOnlyDigits() returns trigger as $$
+        begin
+		if(new.numero !~'^\d{1,30}$') then
+		     raise exception 'numero in Telefono deve essere di sole cifre';
+		end if;
+		return new;
+		end $$ language plpgsql;
+create trigger NumTelefonoOnlyDigits
+       before insert or update of numero on telefono
+	   for each row execute procedure ProcNumTelefonoOnlyDigits();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Responsabile e verifica che il responsabile sia anche assegnato al punto vendita che dirige.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcResponsabileAncheAssegnato() returns trigger as $$
+       begin
+	   if(not exists(select * from assegnazione where addetto=new.addetto and puntovendita=new.puntovendita)) then
+	        raise exception 'Il responsabile deve anche essere assegnato al punto vendita che dirige';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger ResponsabileAncheAssegnato
+       before insert or update of addetto on responsabile
+	   for each row execute procedure ProcResponsabileAncheAssegnato();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Noleggio e verifica che la bici da noleggia sia disponibile (riconsegnata).
+--Nel caso in cui così non fosse lancia un'eccezione.
+	   
+create or replace function ProcNOLEGGIOconsistency() returns trigger as $$
+       begin
+	   if(exists(select noleggio.codice from noleggio where noleggio.bici=new.bici except 
+				 select riconsegna.noleggio from riconsegna, noleggio where riconsegna.noleggio=noleggio.codice)) then
+	        raise exception 'Prima di creare il noleggio è necessario riconsegnare la bici';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger NOLEGGIOconsistency
+       before insert or update on noleggio
+	   for each row execute procedure ProcNOLEGGIOconsistency();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Riconsegna e verifica che esista il prelievo al noleggio associato.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcPRELIEVObeforeRICONSEGNA() returns trigger as $$
+       begin
+	   if(not exists(select * from prelievo where prelievo.noleggio=new.noleggio)) then
+	        raise exception 'Prima di creare la riconsegna è necessario creare il prelievo';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger PRELIEVObeforeRICONSEGNA
+       before insert or update on riconsegna
+	   for each row execute procedure ProcPRELIEVObeforeRICONSEGNA();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Pagamento e verifica che esista la riconsegna al noleggio associato.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcRICONSEGNAbeforePAGAMENTO() returns trigger as $$
+       begin
+	   if(not exists(select * from riconsegna where riconsegna.noleggio=new.noleggio)) then
+	       raise exception 'Prima di creare il pagamento è necessario creare la riconsegna';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger RICONSEGNAbeforePAGAMENTO
+       before insert or update on pagamento
+	   for each row execute procedure ProcRICONSEGNAbeforePAGAMENTO();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Riconsegna e verifica che la data di fine del noleggio sia posteriore o al più uguale a quella di inizio.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcDateconsistency() returns trigger as $$
+	   declare
+	      app date;
+		  att time;
+	   begin
+	   select datainizio,orainizio into app,att from prelievo where prelievo.noleggio=new.noleggio;
+	   if(app > new.datafine) then
+	        raise exception 'La data di fine del noleggio deve essere posteriore o al più uguale a quella di inizio';
+	   end if;
+	   if((app = new.datafine) and (att>=new.orafine)) then
+	        raise exception 'Per noleggi che terminano nella stessa giornata in cui sono iniziati, l’ora di fine di riconsegna deve essere successiva a quella di inizio di prelievo';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger dateconsistency
+       before insert or update on riconsegna
+	   for each row execute procedure ProcDateconsistency();
+
+--Il seguente trigger scatta all'inserimento o alla modifica di una tupla della relazione Pagamento e verifica che molteplici aspetti circa i suoi attributi siano corretti.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcpagamentiConCardPrepagata() returns trigger as $$
+       declare
+		  anticipoApp numeric(5,2);
+		  tipoApp varchar(30);
+		  valoreApp numeric(5,2);
+	   begin
+	   select anticipo into anticipoApp from prelievo where prelievo.noleggio = new.noleggio;
+	   select tipo into tipoApp from noleggio where noleggio.codice = new.noleggio;
+	   select valore into valoreApp from tariffa,noleggio where tariffa.nome = noleggio.tariffa and noleggio.codice=new.noleggio;
+	   if((new.metodo='CardPrepagata' and anticipoApp != 0) or (new.metodo='CardPrepagata' and new.totale != 0)) then
+	       raise exception 'Per pagamenti effettuati con card prepagata l’anticipo ed il totale devono essere zero';
+	   end if;
+	   if(new.metodo !='CardPrepagata' and new.totale = 0) then
+	       raise exception 'Per pagamenti effettuati NON con card prepagata il totale deve essere maggiore di 0';
+	   end if;  
+	   if(new.metodo !='CardPrepagata' and anticipoApp=0 and tipoApp='Giornaliero') then
+	       raise exception 'Un noleggio giornaliero NON pagato con card prepagata NON può avere anticipo=0';
+	   end if;
+	   if(tipoApp='Giornaliero' and anticipoApp != 0 and anticipoApp != valoreApp*24) then
+	       raise exception 'Per noleggi giornalieri con anticipo diverso da 0, l’anticipo stesso deve essere uguale alla tariffa moltiplicata per 24';
+	   end if;
+	   if(new.totale < anticipoApp) then
+	       raise exception 'Il totale del pagamento deve essere maggiore o uguale dell’anticipo';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger pagamentiConCardPrepagata
+       before insert or update on pagamento
+	   for each row execute procedure ProcpagamentiConCardPrepagata();
+
+--Il seguente trigger scatta alla modifica di una tupla della relazione CardPrepagata e verifica che una card prepagata acquistata non abbia un numero di ore rimanenti non definito.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcOreRimanentiCardAcquistataMustBeNotNull() returns trigger as $$
+       begin 
+	   if(exists(select from acquisto where acquisto.cardprepagata=new.codice) and new.orerimanenti is null) then
+	       raise exception 'Una card prepagata che è stata acquistata NON può avere un numero di ore rimanenti non definito';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger OreRimanentiCardAcquistataMustBeNotNull
+       before update of orerimanenti on cardprepagata
+	   for each row execute procedure ProcOreRimanentiCardAcquistataMustBeNotNull();
+
+--Il seguente trigger scatta all' inserimento o alla modifica di una tupla della relazione CardPrepagata e verifica che una card prepagata non acquistata abbia un numero di ore rimanenti non definito.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcOreRimanentiInserimentoCard() returns trigger as $$
+       begin
+	   if(not exists(select * from cardprepagata, acquisto where new.codice=acquisto.cardprepagata) and new.orerimanenti is not null) then
+	        raise exception 'Una card prepagata che NON è stata acquistata deve avere ore rimanenti uguali a null';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger oreRimanentiInserimentoCard
+       before insert or update on cardprepagata
+	   for each row execute procedure ProcOreRimanentiInserimentoCard();
+
+--Il seguente trigger scatta all' inserimento di una tupla della relazione Acquisto ed esegue il calcolo delle ore rimanenti, inizializzando il rispettivo attributo nella relazione CardPrepagata.
+
+create or replace function ProcOreRimanentiFirstTime() returns trigger as $$
+	   declare
+	   tariffaCard numeric(5,2) = 1.10;
+	   begin
+	   update cardprepagata set
+	          orerimanenti = new.costo/tariffaCard
+			  where codice = new.cardprepagata;
+	   return new;
+	   end $$ language plpgsql;
+create trigger OreRimanentiFirstTime
+       after insert on acquisto
+	   for each row execute procedure ProcOreRimanentiFirstTime();
+
+--Il seguente trigger scatta all' inserimento di una tupla della relazione Pagamento ed aggiorna l'attributo orerimanenti nella relazione CardPrepagata.
+--Nel caso in cui vi fossero problemi lancia un'eccezione.
+
+create or replace function ProcaggiornamentoOreRimanenti() returns trigger as $$
+       declare
+	   vecchieOrerimanenti integer;
+	   datafineApp date;
+	   datainizioApp date;
+	   orainizioApp time;
+	   orafineApp time;
+	   difData integer;
+	   difOre integer;
+	   app integer;
+	   sixty numeric(5,2)=60.0;
+	   app1 numeric(5,2);
+	   codiceApp char(5);
+	   begin
+	   select cardprepagata.orerimanenti, cardprepagata.codice into vecchieOrerimanenti, codiceApp
+	               from pagamento, noleggio, cliente, acquisto, cardprepagata
+	               where new.metodo='CardPrepagata' and
+				   new.noleggio=noleggio.codice and
+				   noleggio.cliente=cliente.documento and
+				   noleggio.cliente=acquisto.cliente and
+				   acquisto.cardprepagata=cardprepagata.codice ;
+	   select datainizio, orainizio, datafine, orafine into datainizioapp, orainizioApp, datafineApp, orafineApp
+	          from pagamento, prelievo, riconsegna
+			  where new.noleggio=prelievo.noleggio and prelievo.noleggio=riconsegna.noleggio;
+	   if(vecchieOrerimanenti = 0) then
+	        raise exception 'Sulla cardprepagata non vi sono ore residue!!!';
+	   end if;
+	   --OreRimanenti = OreRimanenti - [24 * (DataFine - DataInizio) + (OraFine - OraInizio)]
+	   difData = DATEDIFF('day', datainizioApp, datafineApp);
+	   app = TIMEDIFF('minute', orainizioApp::time, orafineApp::time);
+	   if(app=0) then
+	       difOre=0;
+	   elsif(app>0 and app<30) then
+	       difOre=1;
+	   else
+	       app1=app/sixty;
+		   if((app1-(app/60))>=0.5) then
+		       difOre=app/60+1;
+		   else
+		       difOre=app/60;
+		   end if;
+	   end if;
+	   if((vecchieOrerimanenti - ((24 * difData) + difOre))<0) then
+	    	raise exception 'Le ore rimanenti non sono sufficienti per effettuare il pagamento';
+	   end if;
+	   update cardprepagata set
+	          orerimanenti = vecchieOrerimanenti - ((24 * difData) + difOre)
+			  where cardprepagata.codice=codiceApp and cardprepagata.orerimanenti=vecchieOrerimanenti;
+	   return new;
+	   end $$ language plpgsql;	
+create trigger aggiornamentoOreRimanenti
+       after insert on pagamento
+	   for each row execute procedure ProcaggiornamentoOreRimanenti();
+
+--Il seguente trigger scatta all' inserimento o alla modifica di una tupla della relazione Pagamento e verifica che l'attributo noleggio in Pagamento sia coerente con il noleggio effettuato.
+--Nel caso in cui così non fosse lancia un'eccezione.
+
+create or replace function ProcCheckTotalePagamento() returns trigger as $$
+       declare
+	   datafineApp date;
+	   datainizioApp date;
+	   orainizioApp time;
+	   orafineApp time;
+	   difData integer;
+	   difOre integer;
+	   totaleCorretto numeric(5,2);
+	   valoreApp numeric(5,2);
+	   app integer;
+	   app1 numeric(5,2);
+	   sixty numeric(5,2)=60.0;
+	   begin
+	   select datainizio, orainizio, datafine, orafine into datainizioapp, orainizioApp, datafineApp, orafineApp
+	          from pagamento, prelievo, riconsegna
+			  where new.noleggio=prelievo.noleggio and prelievo.noleggio=riconsegna.noleggio;
+	   select valore into valoreApp from pagamento, noleggio, tariffa
+	                 where new.noleggio=noleggio.codice and noleggio.tariffa=tariffa.nome;
+	   difData = DATEDIFF('day', datainizioApp, datafineApp);
+	   app = TIMEDIFF('minute', orainizioApp::time, orafineApp::time);
+	   if(app=0) then
+	       difOre=0;
+	   elsif(app>0 and app<30) then
+	       difOre=1;
+	   else
+	       app1=app/sixty;
+		   if((app1-(app/60))>=0.5) then
+		       difOre=app/60+1;
+		   else
+		       difOre=app/60;
+		   end if;
+	   end if;
+	   totaleCorretto = (24*difData + difOre)*valoreApp;
+	   if(new.metodo!='CardPrepagata' and new.totale != totaleCorretto) then
+	          raise notice 'Il totale NON è corretto!!! Dovrebbe essere: %; noleggio: %', totaleCorretto, new.noleggio;
+	          raise exception 'Il totale NON è corretto!!!';
+	   end if;
+	   return new;
+	   end $$ language plpgsql;
+create trigger checkTotalePagamento
+       after insert or update on pagamento
+	   for each row execute procedure ProcCheckTotalePagamento();
+
+--Il seguente trigger scatta all' inserimento di una tupla della relazione Prelievo e imposta a null l'attributo puntovendita della relazione Bici.
+
+create or replace function ProcPrelievoBici() returns trigger as $$
+       declare
+	   biciApp integer;
+	   begin
+	   select bici.codice into biciApp from noleggio, prelievo, bici
+	          where new.noleggio=noleggio.codice and noleggio.bici=bici.codice;
+	   update bici set
+	   puntovendita = null
+	   where bici.codice=biciApp;
+	   return new;
+	   end $$ language plpgsql;
+create trigger PrelievoBici
+       after insert on prelievo
+	   for each row execute procedure ProcPrelievoBici();
+
+--Il seguente trigger scatta all' inserimento di una tupla della relazione Riconsegna ed assegna alla bici il punto vendita in cui essa è stata riconsegnata.
+
+create or replace function ProcRiconsegnaBici() returns trigger as $$
+       declare
+	   biciApp integer;
+	   begin
+	   select bici.codice into biciApp from noleggio, riconsegna, bici
+	          where new.noleggio=noleggio.codice and noleggio.bici=bici.codice;
+	   update bici set
+	   puntovendita = new.puntovendita
+	   where bici.codice=biciApp;
+	   return new;
+	   end $$ language plpgsql;
+create trigger RiconsegnaBici
+       after insert on riconsegna
+	   for each row execute procedure ProcRiconsegnaBici();
+
+--Il seguente trigger scatta alla modifica di una tupla della relazione Tariffa e la impedisce tranne che sull'attributo nome, lanciando un'eccezione.
+
+create or replace function ProcImpedisciAggiornamentoTariffa() returns trigger as $$
+    begin
+    if(exists (select * from noleggio,tariffa where noleggio.tariffa=old.nome))then
+       if(new.valore!=old.valore OR new.tipogiorno!=old.tipogiorno OR new.tipocliente!=old.tipocliente OR
+          new.marcamodello!=old.marcamodello OR new.nomemodello!=old.nomemodello)then
+		         raise exception 'Impossibile modificare una tariffa a cui corrisponde almeno un noleggio';
+	   end if;
+	end if;
+	return new;
+	end $$ language plpgsql;
+create trigger ImpedisciAggiornamentoTariffa
+       before update on tariffa
+	   for each row execute procedure ProcImpedisciAggiornamentoTariffa();

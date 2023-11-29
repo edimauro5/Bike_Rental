@@ -1,0 +1,170 @@
+--SCRIPT DI CREAZIONE
+
+drop table if exists modello cascade;
+drop table if exists puntovendita cascade;
+drop table if exists addetto cascade;
+drop table if exists assegnazione cascade;
+drop table if exists telefono cascade;
+drop table if exists responsabile cascade;
+drop table if exists cliente cascade;
+drop table if exists cardprepagata cascade;
+drop table if exists acquisto cascade;
+drop table if exists bici cascade;
+drop table if exists tariffa cascade;
+drop table if exists noleggio cascade;
+drop table if exists prelievo cascade;
+drop table if exists riconsegna cascade;
+drop table if exists pagamento cascade;
+
+create table modello(   
+    marca varchar(30) not null,
+    nome varchar(30) not null,
+    grandezzaruote numeric(3,1) not null check(grandezzaruote > 0),
+	colore varchar(30) not null,
+    categoria varchar(30) not null,
+    duratabatteria integer null,
+    primary key(marca, nome),
+    check (categoria='DaCitta' OR categoria = 'MountainBike' OR categoria = 'Bambino' OR categoria = 'APedalataAssistita' OR categoria = 'Elettrica'),
+    check ((categoria='Elettrica' AND duratabatteria is not null AND duratabatteria>0) OR(categoria != 'Elettrica' AND duratabatteria is null))
+);
+
+create table puntovendita(
+    numid integer primary key,
+	via varchar(30) not null,
+    civico integer not null,
+    citta varchar(30) not null,
+    cap char(5) not null,
+    unique(via, civico, citta, cap),
+    check(numid > 0),
+    check(civico > 0),
+    check(char_length(cap)=5)  
+);
+	
+create table addetto(
+    matricola char(5) primary key check((char_length(matricola)=5)), 
+    nome varchar(30) not null,
+    cognome varchar(30) not null  
+);
+
+create table assegnazione(
+    puntovendita integer not null references puntovendita(numid)  
+       on delete cascade on update cascade,  
+	addetto char(5) not null references addetto(matricola)
+       on delete cascade on update cascade,
+    primary key(puntovendita, addetto)
+);
+
+create table telefono(
+    numero varchar(30) primary key,
+    addetto char(5) not null references addetto(matricola)
+       on delete cascade on update cascade
+);
+
+create table responsabile(
+    addetto char(5) not null references addetto(matricola)
+	   on delete cascade on update cascade,
+	puntovendita integer not null references puntovendita(numid)
+	   on delete cascade on update cascade, 
+	primary key(addetto),
+    unique(puntovendita)
+);
+
+create table cliente(
+    documento varchar(30) primary key,
+    via varchar(30) null,
+    numerocivico integer null check(numerocivico > 0),
+    cap char(5) null check((char_length(cap)=5)), 
+    citta varchar(30) null,
+    tipo varchar(30) not null check(tipo='Studente' OR tipo='Anziano' OR tipo='Altro'),
+    cartadicredito char(16) not null check((char_length(cartadicredito)=16)), 
+    check((via is not null AND numerocivico is not null AND cap is not null AND citta is not null)OR
+		  (via is null AND numerocivico is null AND cap is null AND citta is null))
+);
+	   
+create table cardprepagata(
+    codice char(5) primary key check((char_length(codice)=5)),
+    orerimanenti integer null check((orerimanenti is null) OR (orerimanenti is not null AND orerimanenti >= 0))
+);
+
+create table acquisto(
+    transazione integer not null check(transazione > 0),
+    data date not null,
+	primary key (transazione, data),
+    costo numeric(5,2) not null check(costo > 0),
+    metodo varchar(30) not null,
+    check (metodo = 'Contanti' OR metodo = 'CartaDiCredito'),
+	cliente varchar(30) unique not null references cliente(documento)
+       on delete restrict on update cascade,
+    cardprepagata char(5) not null references cardprepagata(codice)
+       on delete cascade on update cascade,
+	unique(cardprepagata)
+);
+
+create table bici(
+    codice integer primary key check(codice > 0),
+    numtelaio varchar(15) not null,
+    stato varchar(500) not null,
+    marcamodello varchar(30) not null,
+    nomemodello varchar(30) not null ,
+    puntovendita integer null references puntovendita(numid)
+       on update cascade on delete set null,
+	foreign key(marcamodello, nomemodello) references modello(marca, nome)
+	   on update cascade on delete restrict,  
+	unique(numtelaio, marcamodello, nomemodello)
+);
+
+create table tariffa(
+    nome varchar(30) primary key,
+    valore numeric(5,2) not null check(valore > 0),
+    tipogiorno varchar(30) not null check (tipogiorno='Feriale' OR tipogiorno='Festivo'),
+    tipocliente varchar(30) not null check(tipocliente='Studente' OR tipocliente='Anziano' OR tipocliente='Altro'),
+    marcamodello varchar(30) not null,
+    nomemodello varchar(30) not null,
+    foreign key(marcamodello, nomemodello) references modello(marca, nome)
+	   on update cascade on delete cascade  
+);
+
+create table noleggio(   
+    codice char(6) primary key check((char_length(codice)=6)),  
+    tipo varchar(30) not null check(tipo='AdOre' OR tipo='Giornaliero'),
+    bici integer not null references bici(codice)
+       on delete restrict on update cascade, 
+    tariffa varchar(30) not null references tariffa(nome)
+	   on delete restrict on update cascade,
+	cliente varchar(30) not null references cliente(documento)
+	   on delete restrict on update cascade
+);
+
+create table prelievo(
+    noleggio char(6) primary key references noleggio(codice)
+	    on delete cascade on update cascade,
+    datainizio date not null,
+    orainizio time not null,
+    anticipo numeric(5,2) not null check(anticipo>=0),
+    cauzione numeric(5,2) not null check(cauzione>0),
+	puntovendita integer not null references puntovendita(numid)
+	    on delete restrict on update cascade  
+);
+
+create table riconsegna(
+    noleggio char(6) primary key references noleggio(codice)
+	    on delete cascade on update cascade,
+	datafine date not null,
+    orafine time not null,
+	danni boolean not null,
+    motivotrattenuta varchar(200) null,
+	puntovendita integer not null references puntovendita(numid)
+	    on delete restrict on update cascade,  
+	check((danni is true AND motivotrattenuta is not null)OR(danni is false AND motivotrattenuta is null))
+);
+
+
+create table pagamento(
+    transazione integer not null check(transazione > 0),
+    data date not null,
+	primary key (transazione, data),
+	totale numeric(5,2) not null check(totale >= 0),
+    metodo varchar(30) not null check(metodo='Contanti' OR metodo='CartaDiCredito' OR metodo='CardPrepagata'),
+    noleggio char(6) not null unique references noleggio(codice)
+	   on delete cascade on update cascade
+);

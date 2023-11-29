@@ -1,0 +1,208 @@
+<Project name="E-R_CuGruMalDiBike">
+<ConceptualSchema>
+<Entity name="Punto Vendita" X="659" Y="-104" >
+<Attribute name="NumID" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="Via" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Civico" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="Citta" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="CAP" type="char" minCard="1" maxCard="1" length="5"/>
+<Identifier name="ID0" attributes="NumID"/>
+<Identifier name="ID1" attributes="Via, Civico, Citta, CAP"/>
+</Entity>
+<Entity name="Modello" X="2" Y="563" >
+<Attribute name="Marca" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Nome" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="GrandezzaRuote" type="numeric" minCard="1" maxCard="1" length="3" precision="1"/>
+<Attribute name="Colore" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Categoria" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Identifier name="ID0" attributes="Marca, Nome"/>
+</Entity>
+<Entity name="Bici" X="245" Y="438" >
+<Attribute name="Codice" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="NumTelaio" type="varchar" minCard="1" maxCard="1" length="15"/>
+<Attribute name="Stato" type="varchar" minCard="1" maxCard="1" length="500"/>
+<Identifier name="ID0" attributes="Codice"/>
+<Identifier name="ID1" attributes="NumTelaio"/>
+</Entity>
+<Relationship name="IstanzaDi" X="76" Y="454">
+</Relationship>
+<Entity name="ModelloElettrico" X="30" Y="782" >
+<Attribute name="DurataBatteria" type="integer" minCard="1" maxCard="1"/>
+</Entity>
+<Entity name="Cliente" X="667" Y="731" >
+<Attribute name="Documento" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="CartaDiCredito" type="char" minCard="1" maxCard="1" length="16"/>
+<ComposedAttribute name="Residenza" minCard="0" maxCard="1">
+<Attribute name="Via" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="NumeroCivico" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="CAP" type="char" minCard="1" maxCard="1" length="5"/>
+<Attribute name="Citta" type="varchar" minCard="1" maxCard="1" length="30"/>
+</ComposedAttribute>
+<Identifier name="ID0" attributes="Documento"/>
+</Entity>
+<Entity name="Noleggio" X="688" Y="450" >
+<Attribute name="Codice" type="char" minCard="1" maxCard="1" length="6"/>
+<Attribute name="Tipo" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Identifier name="ID0" attributes="Codice"/>
+</Entity>
+<Entity name="Studente" X="672" Y="971" >
+</Entity>
+<Entity name="Anziano" X="837" Y="972" >
+</Entity>
+<Entity name="CardPrepagata" X="1129" Y="985" >
+<Attribute name="Codice" type="char" minCard="1" maxCard="1" length="5"/>
+<Attribute name="OreRimanenti" type="integer" minCard="0" maxCard="1"/>
+<Identifier name="ID0" attributes="Codice"/>
+</Entity>
+<Entity name="Pagamento" X="1113" Y="432" >
+<Attribute name="Transazione" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="Data" type="date" minCard="1" maxCard="1"/>
+<Attribute name="Totale" type="numeric" minCard="1" maxCard="1" length="5" precision="2"/>
+<Attribute name="Metodo" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Identifier name="ID0" attributes="Transazione, Data"/>
+</Entity>
+<Entity name="Tariffa" X="280" Y="705" >
+<Attribute name="Nome" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Valore" type="numeric" minCard="1" maxCard="1" length="5" precision="2"/>
+<Attribute name="TipoGiorno" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="TipoCliente" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Identifier name="ID0" attributes="Nome"/>
+</Entity>
+<Relationship name="Applicazione" X="534" Y="587">
+</Relationship>
+<Entity name="Addetto" X="1205" Y="-221" >
+<Attribute name="Matricola" type="char" minCard="1" maxCard="1" length="5"/>
+<Attribute name="Nome" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Cognome" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Attribute name="Telefono" type="varchar" minCard="0" maxCard="N" length="30"/>
+<Identifier name="ID0" attributes="Matricola"/>
+</Entity>
+<Relationship name="Direzione" X="978" Y="-5">
+</Relationship>
+<Relationship name="Assegnazione" X="971" Y="-194">
+</Relationship>
+<Entity name="Responsabile" X="1261" Y="6" >
+</Entity>
+<Relationship name="Prodotto" X="531" Y="454">
+</Relationship>
+<Relationship name="Effettuazione" X="725" Y="606">
+</Relationship>
+<Relationship name="Spesa" X="951" Y="459">
+</Relationship>
+<Entity name="Acquisto" X="1117" Y="759" >
+<Attribute name="Transazione" type="integer" minCard="1" maxCard="1"/>
+<Attribute name="Data" type="date" minCard="1" maxCard="1"/>
+<Attribute name="Costo" type="numeric" minCard="1" maxCard="1" length="5" precision="2"/>
+<Attribute name="Metodo" type="varchar" minCard="1" maxCard="1" length="30"/>
+<Identifier name="ID0" attributes="Transazione, Data"/>
+</Entity>
+<Relationship name="Disponibilita" X="296" Y="-69">
+</Relationship>
+<Relationship name="Corrispondenza" X="322" Y="599">
+</Relationship>
+<Entity name="Prelievo" X="511" Y="177" >
+<Attribute name="DataInizio" type="date" minCard="1" maxCard="1"/>
+<Attribute name="OraInizio" type="time" minCard="1" maxCard="1"/>
+<Attribute name="Anticipo" type="numeric" minCard="1" maxCard="1" length="5" precision="2"/>
+<Attribute name="Cauzione" type="numeric" minCard="1" maxCard="1" length="5" precision="2"/>
+</Entity>
+<Entity name="Riconsegna" X="818" Y="175" >
+<Attribute name="DataFine" type="time" minCard="1" maxCard="1"/>
+<Attribute name="OraFine" type="time" minCard="1" maxCard="1"/>
+<Attribute name="Danni" type="boolean" minCard="1" maxCard="1"/>
+<Attribute name="MotivoTrattenuta" type="varchar" minCard="0" maxCard="1" length="200"/>
+</Entity>
+<Relationship name="Inizio" X="571" Y="325">
+</Relationship>
+<Relationship name="Fine" X="901" Y="325">
+</Relationship>
+<Relationship name="Partenza" X="557" Y="81">
+</Relationship>
+<Relationship name="Arrivo" X="892" Y="70">
+</Relationship>
+<Relationship name="Scontrino" X="953" Y="785">
+</Relationship>
+<Relationship name="Fidelizzazione" X="1167" Y="899">
+</Relationship>
+<Generalization name="G0"  X="395" Y="313" total="false" exclusive="true" father="Modello">
+<Child name="ModelloElettrico"/>
+</Generalization>
+<Generalization name="G3"  X="-33" Y="109" total="false" exclusive="true" father="Addetto">
+<Child name="Responsabile"/>
+</Generalization>
+<Generalization name="G1"  X="-131" Y="18" total="false" exclusive="true" father="Cliente">
+<Child name="Studente"/>
+<Child name="Anziano"/>
+</Generalization>
+<RelLink name="RelLink0" X="912" Y="617" relationship="IstanzaDi" entity="Bici" minCard="1" maxCard="1" idName="ID1"/>
+<RelLink name="RelLink0" X="936" Y="523" relationship="IstanzaDi" entity="Modello" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="874" Y="545" relationship="Applicazione" entity="Noleggio" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="974" Y="629" relationship="Applicazione" entity="Tariffa" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="940" Y="112" relationship="Assegnazione" entity="Punto Vendita" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="1107" Y="111" relationship="Assegnazione" entity="Addetto" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="992" Y="373" relationship="Direzione" entity="Responsabile" minCard="1" maxCard="1" idName="ID1"/>
+<RelLink name="RelLink0" X="807" Y="323" relationship="Direzione" entity="Punto Vendita" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="596" Y="404" relationship="Prodotto" entity="Bici" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="666" Y="499" relationship="Prodotto" entity="Noleggio" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="948" Y="454" relationship="Effettuazione" entity="Noleggio" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="785" Y="583" relationship="Spesa" entity="Noleggio" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="788" Y="731" relationship="Spesa" entity="Pagamento" minCard="1" maxCard="1" idName="ID1"/>
+<RelLink name="RelLink0" X="530" Y="116" relationship="Disponibilita" entity="Punto Vendita" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="336" Y="288" relationship="Disponibilita" entity="Bici" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="918" Y="818" relationship="Corrispondenza" entity="Modello" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="1115" Y="965" relationship="Corrispondenza" entity="Tariffa" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="903" Y="1095" relationship="Inizio" entity="Noleggio" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="714" Y="942" relationship="Inizio" entity="Prelievo" minCard="1" maxCard="1" idName="ID0"/>
+<RelLink name="RelLink0" X="1148" Y="1163" relationship="Fine" entity="Riconsegna" minCard="1" maxCard="1" idName="ID0"/>
+<RelLink name="RelLink0" X="976" Y="1036" relationship="Fine" entity="Noleggio" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="876" Y="804" relationship="Partenza" entity="Punto Vendita" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="758" Y="892" relationship="Partenza" entity="Prelievo" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="1124" Y="901" relationship="Arrivo" entity="Riconsegna" minCard="1" maxCard="1"/>
+<RelLink name="RelLink0" X="956" Y="807" relationship="Arrivo" entity="Punto Vendita" minCard="0" maxCard="N"/>
+<RelLink name="RelLink0" X="511" Y="943" relationship="Scontrino" entity="Cliente" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="773" Y="930" relationship="Scontrino" entity="Acquisto" minCard="1" maxCard="1" idName="ID2"/>
+<RelLink name="RelLink0" X="1010" Y="931" relationship="Fidelizzazione" entity="Acquisto" minCard="1" maxCard="1" idName="ID1"/>
+<RelLink name="RelLink0" X="1225" Y="930" relationship="Fidelizzazione" entity="CardPrepagata" minCard="0" maxCard="1"/>
+<RelLink name="RelLink0" X="206" Y="304" relationship="Effettuazione" entity="Cliente" minCard="0" maxCard="N"/>
+<Note>
+{\rtf1\ansi
+{\fonttbl\f0\fnil Monospaced;\f1\fnil TimesRoman;}
+{\colortbl\red0\green0\blue0;\red51\green51\blue51;\red255\green0\blue0;}
+
+\li0\ri0\fi0\f1\fs48\i0\b\ul0\cf2\par
+\par
+\par
+\cf1\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\fs36\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\par
+\fs24\par
+\fs36\par
+\par
+\par
+\par
+\par
+\par
+\par
+\li0\ri0\fi0\ul0\par
+}
+
+</Note>
+</ConceptualSchema>
+<RestructuredSchema>
+</RestructuredSchema>
+</Project>

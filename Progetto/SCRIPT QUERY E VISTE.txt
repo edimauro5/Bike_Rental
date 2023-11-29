@@ -1,0 +1,170 @@
+--QUERY
+
+--Stampa il documento dei clienti studenti che hanno almeno una volta pagato un noleggio meno di 10 e il numero di volte che lo hanno fatto.
+
+select documento, count(*)
+from noleggio, pagamento, cliente
+where noleggio.codice=pagamento.noleggio and
+      pagamento.totale<10 and
+      noleggio.cliente=cliente.documento and
+      cliente.tipo='Studente'
+group by(documento);
+
+--Stampa tutti i punti vendita in cui sono disponibili tutti i modelli di bici.
+
+select *
+from puntovendita PV
+where not exists (select M.nome, M.marca
+		  		  from modello M		
+		 		  except
+			   	  select B.nomemodello, B.marcamodello
+			 	  from bici B
+			 	  where B.puntovendita=PV.numid);
+
+--Stampa resoconto spese per ogni cliente, indicando il tipo di spesa.
+
+select cliente, totale, transazione, data, 'noleggio' as tipo
+from noleggio, pagamento
+where noleggio.codice=pagamento.noleggio
+union all
+select documento as cliente, costo as totale, transazione, data, 'card' as tipo
+from cliente, acquisto
+where cliente.documento=acquisto.cliente
+order by cliente;
+
+--Stampa i clienti che hanno noleggiato il modello di bici più costoso con il relativo modello e tariffa.
+
+select cliente.*, tariffa.nomemodello, tariffa.marcamodello, tariffa.valore
+from cliente, noleggio, tariffa
+where cliente.documento=noleggio.cliente and
+	  noleggio.tariffa=tariffa.nome and
+	  tariffa.valore=(select max(tariffa.valore)
+					  from tariffa, noleggio
+					  where tariffa.nome=noleggio.tariffa);
+
+--Stampa tutti i noleggi che non sono stati riconsegnati. (3 metodi)
+
+select *
+from noleggio
+except 
+select noleggio.*
+from noleggio, riconsegna
+where noleggio.codice=riconsegna.noleggio;
+
+select *
+from noleggio
+where noleggio.codice not in (select riconsegna.noleggio
+				              from riconsegna);
+
+select *
+from noleggio
+where not exists (select riconsegna.noleggio
+				  from riconsegna
+				  where noleggio.codice=riconsegna.noleggio);
+
+
+
+--VISTE
+
+--La vista produce una tabella composta dalle categorie di bici noleggiate e per ognuna il numero di volte in cui sono state noleggiate.
+
+create view numpercategoria as
+select categoria, count(*) as n_volte
+from noleggio, bici, modello
+where noleggio.bici=bici.codice and
+      bici.nomemodello=modello.nome and
+	  bici.marcamodello=modello.marca
+group by categoria;
+
+--Stampa la categoria di bici noleggiata più volte.
+
+select distinct categoria, n_volte
+from numpercategoria
+where n_volte=(select max(n_volte)
+			   from numpercategoria)
+order by categoria;
+
+
+
+--La vista produce una tabella composta dai clienti che hanno effettuato almeno un noleggio ed il numero di noleggi che hanno effettuato.
+
+create view numnoleggi as
+select cliente, count(*) as num
+from noleggio
+group by cliente;
+
+--Stampa il cliente che ha effettuato più noleggi
+
+select cliente.*, num
+from cliente, numnoleggi
+where numnoleggi.cliente=cliente.documento and
+	  cliente.documento in (select cliente
+						    from numnoleggi
+						    where num=(select max(num)
+									   from numnoleggi));
+
+
+
+--La vista produce una tabella composta dai punti vendita in cui è stato effettuato almeno un noleggio da un cliente di tipo Altro
+--e per ogni punto vendita il numero di noleggi effettuati da questo tipo di cliente.
+
+create view numaltroperpv as
+select puntovendita, count(*) as numaltro
+from riconsegna, noleggio, cliente
+where riconsegna.noleggio=noleggio.codice and
+	  noleggio.cliente=cliente.documento and
+	  cliente.tipo like 'Altro'
+group by puntovendita;
+
+--La vista produce una tabella composta dai punti vendita in cui è stato effettuato almeno un noleggio da un cliente di tipo Anziano
+--e per ogni punto vendita il numero di noleggi effettuati da questo tipo di cliente.
+
+create view numanzianoperpv as
+select puntovendita, count(*) as numanziano
+from riconsegna, noleggio, cliente
+where riconsegna.noleggio=noleggio.codice and
+	  noleggio.cliente=cliente.documento and
+	  cliente.tipo like 'Anziano'
+group by puntovendita;
+
+--La vista produce una tabella composta dai punti vendita in cui è stato effettuato almeno un noleggio da un cliente di tipo Studente
+--e per ogni punto vendita il numero di noleggi effettuati da questo tipo di cliente.
+
+create view numstudenteperpv as
+select puntovendita, count(*) as numstudente
+from riconsegna, noleggio, cliente
+where riconsegna.noleggio=noleggio.codice and
+	  noleggio.cliente=cliente.documento and
+	  cliente.tipo like 'Studente'
+group by puntovendita;
+
+--La vista produce una tabella composta dai noleggi effettuati da clienti studenti ed anziani ed il totale di ogni noleggio.
+
+create view pagamenti_st_an as
+select noleggio.codice as noleggio, totale
+from pagamento, noleggio, cliente
+where pagamento.noleggio=noleggio.codice and
+	  noleggio.cliente=cliente.documento and
+	  cliente.tipo not like 'Altro';
+
+--Stampa il punto vendita situato a Bologna in cui ogni tipo di cliente ha effettuato un noleggio ed è stato effettuato il maggior numero di noleggi
+--da clienti di tipo Altro. Stampare, inoltre, anche il guadagno ricavato da studenti e anziani.
+
+select PV.*, sum(pagamenti_st_an.totale)
+from puntovendita PV, riconsegna, noleggio, cliente, pagamenti_st_an
+where PV.citta='Bologna' and
+	  PV.numid=riconsegna.puntovendita and
+	  riconsegna.noleggio=noleggio.codice and
+	  noleggio.cliente=cliente.documento and
+	  pagamenti_st_an.noleggio=noleggio.codice and
+	  PV.numid in (select numaltroperpv.puntovendita 
+		     	   from numaltroperpv, numanzianoperpv, numstudenteperpv
+				   where numaltroperpv.puntovendita=numanzianoperpv.puntovendita and
+					     numanzianoperpv.puntovendita=numstudenteperpv.puntovendita) and
+	  PV.numid in (select puntovendita
+				   from numaltroperpv
+				   where numaltro=(select max(numaltro)
+								   from numaltroperpv, puntovendita
+								   where numaltroperpv.puntovendita=puntovendita.numid and
+								         puntovendita.citta='Bologna'))
+group by PV.numid, PV.via, PV.civico, PV.citta, PV.cap;
